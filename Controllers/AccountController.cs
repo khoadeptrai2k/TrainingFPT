@@ -140,9 +140,7 @@ namespace TrainingFPT.Controllers
 
         //
         // GET: /Account/Register
-        [Authorize(Roles = "Admin")]
-
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin, TrainingStaff")]
         public ActionResult Register()
         {
             if (User.IsInRole("Admin"))

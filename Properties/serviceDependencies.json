@@ -2,7 +2,7 @@
   "dependencies": {
     "mssql1": {
       "type": "mssql",
-      "connectionId": "TrainingFPT311"
+      "connectionId": "TrainingFPT311_db"
     }
   }
 }

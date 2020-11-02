@@ -2,7 +2,7 @@
 
 @{ ViewBag.Title = "UsersWithRoles"; }
 
-@if (Request.IsAuthenticated && User.IsInRole("Admin"))
+@if (Request.IsAuthenticated && User.IsInRole("Admin") )
 {
 <p>
     <a onclick="window.location='@Url.Action("Register", "Account")'" class="btn btn-toolbar btn-lg">New User &raquo;</a>
@@ -12,24 +12,25 @@
     <table class="table table-striped" id="UsersWithRoles">
         <thead>
             <tr>
-                <th>FullName</th>
+                <th>Name</th>
                 <th>UserName</th>
                 <th>Email</th>
                 <th>Role</th>
                 <th>Edit</th>
                 <th>Delete</th>
-
             </tr>
         </thead>
         @foreach (var user in Model)
         {
 <tr>
+        @if ((user.Role.Contains("Staff") || user.Role.Contains("Trainer")) == true)
+        {
     <td>@user.Name</td>
     <td>@user.Username</td>
     <td>@user.Email</td>
     <td>@user.Role</td>
     <td>@Html.ActionLink("Edit", "Edit", new { id = user.UserId })</td>
-    <td>@Html.ActionLink("Delete", "Delete", new { id = user.UserId })</td>
+    <td>@Html.ActionLink("Delete", "Delete", new { id = user.UserId })</td>}
 
 </tr>}
     </table>

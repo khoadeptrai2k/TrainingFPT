@@ -19,30 +19,44 @@ namespace TrainingFPT.Controllers
         {
             _context = new ApplicationDbContext();
         }
-
+        [Authorize(Roles = "Staff, Trainer")]
         public ActionResult Index()
         {
-            if (User.IsInRole("TrainingStaff"))
+            if (User.IsInRole("Staff"))
             {
-                var trainertopics = _context.TrainerTopics.Include(t => t.Topic).Include(t => t.Trainer).ToList();
+                var trainertopics = _context.TrainerTopics
+                  .Include(t => t.Topic)
+                  .Include(t => t.Trainer)
+                  .ToList();
                 return View(trainertopics);
             }
+
             if (User.IsInRole("Trainer"))
             {
                 var trainerId = User.Identity.GetUserId();
-                var Res = _context.TrainerTopics.Where(e => e.TrainerId == trainerId).Include(t => t.Topic).ToList();
+                var Res = _context.TrainerTopics
+                  .Where(e => e.TrainerId == trainerId)
+                  .Include(t => t.Topic)
+                  .ToList();
                 return View(Res);
             }
             return View("Login");
         }
 
+        [Authorize(Roles = "Staff")]
+        [HttpGet]
         public ActionResult Create()
         {
-            //get trainer
-            var role = (from r in _context.Roles where r.Name.Contains("Trainer") select r).FirstOrDefault();
-            var users = _context.Users.Where(x => x.Roles.Select(y => y.RoleId).Contains(role.Id)).ToList();
+            var role = (from r in _context.Roles
+                        where r.Name.Contains("Trainer")
+                        select r)
+                        .FirstOrDefault();
+            var users = _context.Users
+              .Where(x => x.Roles
+              .Select(y => y.RoleId)
+              .Contains(role.Id))
+              .ToList();
 
-            //get topic
             var topics = _context.Topics.ToList();
 
             var TrainerTopicVM = new TrainerTopicViewModel()
@@ -58,85 +72,49 @@ namespace TrainingFPT.Controllers
         [HttpPost]
         public ActionResult Create(TrainerTopicViewModel model)
         {
-            //get trainer
-            var role = (from r in _context.Roles where r.Name.Contains("Trainer") select r).FirstOrDefault();
-            var users = _context.Users.Where(x => x.Roles.Select(y => y.RoleId).Contains(role.Id)).ToList();
+            var role = (from r in _context.Roles
+                        where r.Name.Contains("Trainer")
+                        select r)
+                        .FirstOrDefault();
+            var users = _context.Users
+              .Where(x => x.Roles
+              .Select(y => y.RoleId)
+              .Contains(role.Id))
+              .ToList();
 
-            //get topic
             var topics = _context.Topics.ToList();
-
-
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.TrainerTopics.Add(model.TrainerTopic);
-                _context.SaveChanges();
-                return RedirectToAction("Index");
+                return View();
             }
 
-            var TrainerTopicVM = new TrainerTopicViewModel()
-            {
-                Topics = topics,
-                Trainers = users,
-                TrainerTopic = new TrainerTopic()
-            };
+            var trainerTopics = _context.TrainerTopics.ToList();
+            var topicId = model.TrainerTopic.TopicId;
 
-            return View(TrainerTopicVM);
-        }
-        [HttpGet]
-        [Authorize(Roles = "TrainingStaff")]
-        public ActionResult Edit(string id)
-        {
-            if (id == null)
-            {
-                return HttpNotFound();
-            }
-            var appUser = _context.TrainerTopics.Find(id);
-            if (appUser == null)
-            {
-                return HttpNotFound();
-            }
-            return View(appUser);
-        }
+            var checkTrainerInTopic = trainerTopics
+              .SingleOrDefault(c => c.TopicId == topicId && c.TrainerId == model.TrainerTopic.TrainerId);
 
-        [HttpPost]
-        [Authorize(Roles = "TrainingStaff")]
-        public ActionResult Edit(TrainerTopic trainerTopic)
-        {
-            var trainertopicInDb = _context.TrainerTopics.Find(trainerTopic.Id);
-
-            if (trainertopicInDb == null)
+            if (checkTrainerInTopic != null)
             {
-                return View(trainerTopic);
+                ModelState.AddModelError("Name", "Trainer Topic Already Exists.");
+                var TrainerTopicVM = new TrainerTopicViewModel()
+                {
+                    Topics = topics,
+                    Trainers = users,
+                    TrainerTopic = new TrainerTopic()
+                };
+                return View(TrainerTopicVM);
             }
 
-            if (ModelState.IsValid)
+            /*var TrainerTopicVM = new TrainerTopicViewModel()
             {
-                trainertopicInDb.TrainerId = trainerTopic.TrainerId;
-                trainertopicInDb.TopicId = trainerTopic.TopicId;
-
-                _context.TrainerTopics.AddOrUpdate(trainerTopic);
-                _context.SaveChanges();
-
-                return RedirectToAction("Index", "TrainerTopics");
-            }
-            return View(trainerTopic);
-
-        }
-
-        [Authorize(Roles = "TrainingStaff")]
-        public ActionResult Delete(int id)
-        {
-            var trainertopicInDb = _context.TrainerTopics.SingleOrDefault(p => p.Id == id);
-
-            if (trainertopicInDb == null)
-            {
-                return HttpNotFound();
-            }
-            _context.TrainerTopics.Remove(trainertopicInDb);
+              Topics = topics,
+              Trainers = users,
+              TrainerTopic = new TrainerTopic()
+            };*/
+            _context.TrainerTopics.Add(model.TrainerTopic);
             _context.SaveChanges();
-
-            return RedirectToAction("Index", "TrainerTopics");
-
+            return RedirectToAction("Index");
         }
     }
 }
